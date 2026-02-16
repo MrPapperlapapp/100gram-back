@@ -7,7 +7,8 @@ import {
 	HttpStatus,
 	Post,
 	Req,
-	Res
+	Res,
+	UseGuards
 } from "@nestjs/common";
 import {
 	EmailConfirmationRequestDto,
@@ -20,6 +21,7 @@ import {
 import {
 	EmailConfirmationCommand,
 	PasswordRecoveryCommand,
+	RefreshCommand,
 	ResendConfirmationCodeCommand,
 	SignInCommand,
 	SignUpCommand
@@ -35,6 +37,8 @@ import { NewPasswordSwagger } from "@/features/auth/swagger/new-password.swagger
 import { PasswordRecoverySwagger } from "@/features/auth/swagger/password-recovery.swagger";
 import { EmailConfirmationSwagger } from "@/features/auth/swagger/email-confirmation.swagger";
 import { ResendConfirmationSwagger } from "@/features/auth/swagger/resend-confirmation.swagger";
+import { JwtRefreshAuthGuard } from "@/shared/guards";
+import { RefreshSwagger } from "@/features/auth/swagger/refresh.swagger";
 
 @Controller("auth")
 export class AuthController {
@@ -82,6 +86,28 @@ export class AuthController {
 			SignInCommand,
 			SignInResponseDto & { refreshToken: string }
 		>(new SignInCommand(email, password));
+
+		res.cookie("refresh", refreshToken, {
+			httpOnly: true,
+			secure: true,
+			maxAge: 60 * 60 * 1000
+		});
+
+		return { accessToken };
+	}
+
+	@RefreshSwagger()
+	@UseGuards(JwtRefreshAuthGuard)
+	@Post("refresh")
+	@HttpCode(HttpStatus.OK)
+	async refresh(
+		@Req() req: Request,
+		@Res({ passthrough: true }) res: Response
+	) {
+		const { refreshToken, accessToken } = await this.commandBus.execute<
+			RefreshCommand,
+			SignInResponseDto & { refreshToken: string }
+		>(new RefreshCommand(req.user.id));
 
 		res.cookie("refresh", refreshToken, {
 			httpOnly: true,

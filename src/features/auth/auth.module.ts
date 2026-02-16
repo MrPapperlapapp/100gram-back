@@ -16,10 +16,11 @@ import {
 	SignInCommandHandler,
 	ResendConfirmationCodeCommandHandler,
 	PasswordRecoveryCommandHandler,
-	NewPasswordCommandHandler
+	NewPasswordCommandHandler,
+	RefreshCommandHandler
 } from "@/features/auth/application";
 import { JwtWrapperModule } from "@/shared/libs/jwt/jwt.module";
-import { JwtStrategy } from "@/shared/strategies";
+import { JwtRefreshStrategy, JwtStrategy } from "@/shared/strategies";
 import { GoogleRecaptchaModule } from "@nestlab/google-recaptcha";
 import { recaptchaConfig } from "@/core/configs/recaptcha.config";
 
@@ -29,7 +30,8 @@ const commands = [
 	SignInCommandHandler,
 	ResendConfirmationCodeCommandHandler,
 	PasswordRecoveryCommandHandler,
-	NewPasswordCommandHandler
+	NewPasswordCommandHandler,
+	RefreshCommandHandler
 ];
 
 @Module({
@@ -50,7 +52,7 @@ const commands = [
 		MailModule,
 		UserModule
 	],
-	providers: [...commands, JwtStrategy],
+	providers: [...commands, JwtStrategy, JwtRefreshStrategy],
 	controllers: [AuthController]
 })
 export class AuthModule {}
