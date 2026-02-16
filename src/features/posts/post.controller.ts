@@ -1,7 +1,21 @@
-import { Body, Controller, Get, Post, Query, Req } from "@nestjs/common";
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Param,
+	Patch,
+	Post,
+	Query,
+	Req
+} from "@nestjs/common";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import {
 	CreatePostCommand,
+	DeletePostCommand,
+	UpdatePostCommand,
 	UploadPhotosCommand
 } from "@/features/posts/application/commands";
 import { CreatePostRequestDto } from "@/features/posts/dto/request/create-post.request.dto";
@@ -13,6 +27,8 @@ import { ApiBearerAuth, ApiCreatedResponse, ApiTags } from "@nestjs/swagger";
 import { GetPostsQuery } from "@/features/posts/application/queries/get-posts";
 import { PostResponseDto } from "@/features/posts/dto/response/post.response.dto";
 import { GetPostsRequestDto } from "@/features/posts/dto/request/get-posts.request.dto";
+import { GetPostByIdQuery } from "@/features/posts/application/queries";
+import { UpdatePostRequestDto } from "@/features/posts/dto/request/update-post.request.dto";
 
 @ApiTags("posts")
 @ApiBearerAuth()
@@ -51,6 +67,35 @@ export class PostController {
 	async getPosts(@Query() queries: GetPostsRequestDto) {
 		return this.queryBus.execute<GetPostsQuery, PostResponseDto[]>(
 			new GetPostsQuery(queries)
+		);
+	}
+
+	@Get(":id")
+	async getPost(@Param("id") id: string) {
+		return this.queryBus.execute<GetPostByIdQuery, PostResponseDto>(
+			new GetPostByIdQuery(id)
+		);
+	}
+
+	@Protected()
+	@Delete(":id")
+	@HttpCode(HttpStatus.NO_CONTENT)
+	async deletePost(@Param("id") id: string, @Req() req: Request) {
+		return this.commandBus.execute<DeletePostCommand, void>(
+			new DeletePostCommand(id, req.user.id)
+		);
+	}
+
+	@Protected()
+	@Patch(":id")
+	@HttpCode(HttpStatus.NO_CONTENT)
+	async updatePost(
+		@Param("id") id: string,
+		@Body() dto: UpdatePostRequestDto,
+		@Req() req: Request
+	) {
+		return this.commandBus.execute<UpdatePostCommand, void>(
+			new UpdatePostCommand(dto, id, req.user.id)
 		);
 	}
 }
