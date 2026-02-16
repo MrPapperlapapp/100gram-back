@@ -32,7 +32,7 @@ export class PostQueryRepository {
 			findArgs.skip = 1;
 		}
 
-		const [res, totalCount] = await this.prisma.$transaction([
+		const [res, totalCount] = await Promise.all([
 			this.prisma.post.findMany({
 				...findArgs,
 				include: { photos: true }
