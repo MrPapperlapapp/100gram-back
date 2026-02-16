@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "@/shared/libs/prisma";
+import { UpdatePostRequestDto } from "@/features/posts/dto/request/update-post.request.dto";
 
 @Injectable()
 export class PostRepository {
@@ -30,5 +31,24 @@ export class PostRepository {
 		});
 
 		return post.id;
+	}
+
+	async getPostById(id: string) {
+		return this.prisma.post.findUnique({ where: { id } });
+	}
+
+	async deletePostById(id: string) {
+		return this.prisma.post.delete({ where: { id } });
+	}
+
+	async updatePostById(id: string, dto: UpdatePostRequestDto) {
+		const { content, title } = dto;
+		return this.prisma.post.update({
+			where: { id },
+			data: {
+				...(content != null && { content }),
+				title
+			}
+		});
 	}
 }

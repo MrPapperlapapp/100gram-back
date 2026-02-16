@@ -44,4 +44,11 @@ export class PostQueryRepository {
 
 		return { items, totalCount };
 	}
+
+	async getPostById(id: string) {
+		return this.prisma.post.findUnique({
+			where: { id },
+			include: { photos: true }
+		});
+	}
 }
