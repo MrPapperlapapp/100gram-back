@@ -23,7 +23,15 @@ import { UploadInitRequestDto } from "@/features/posts/dto/request/generate-phot
 import { PresignedPostUploadSessionResponseDto } from "@/features/posts/dto/response/presigned-post-upload-session.response.dto";
 import { Protected } from "@/shared/decorators/protected.decorator";
 import type { Request } from "express";
-import { ApiBearerAuth, ApiCreatedResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import {
+	CreatePostSwagger,
+	UpdatePostSwagger,
+	DeletePostSwagger,
+	UploadPhotosSwagger,
+	GetPostsSwagger,
+	GetPostByIdSwagger
+} from "@/features/posts/swagger";
 import { GetPostsQuery } from "@/features/posts/application/queries/get-posts";
 import { PostResponseDto } from "@/features/posts/dto/response/post.response.dto";
 import { GetPostsRequestDto } from "@/features/posts/dto/request/get-posts.request.dto";
@@ -39,6 +47,7 @@ export class PostController {
 		private readonly queryBus: QueryBus
 	) {}
 
+	@CreatePostSwagger()
 	@Protected()
 	@Post()
 	async create(
@@ -50,7 +59,7 @@ export class PostController {
 		);
 	}
 
-	@ApiCreatedResponse({ type: PresignedPostUploadSessionResponseDto })
+	@UploadPhotosSwagger()
 	@Protected()
 	@Post("upload/image")
 	async uploadImage(
@@ -63,6 +72,7 @@ export class PostController {
 		>(new UploadPhotosCommand(req.user.id, contentTypes));
 	}
 
+	@GetPostsSwagger()
 	@Get()
 	async getPosts(@Query() queries: GetPostsRequestDto) {
 		return this.queryBus.execute<GetPostsQuery, PostResponseDto[]>(
@@ -70,6 +80,7 @@ export class PostController {
 		);
 	}
 
+	@GetPostByIdSwagger()
 	@Get(":id")
 	async getPost(@Param("id") id: string) {
 		return this.queryBus.execute<GetPostByIdQuery, PostResponseDto>(
@@ -77,6 +88,7 @@ export class PostController {
 		);
 	}
 
+	@DeletePostSwagger()
 	@Protected()
 	@Delete(":id")
 	@HttpCode(HttpStatus.NO_CONTENT)
@@ -86,6 +98,7 @@ export class PostController {
 		);
 	}
 
+	@UpdatePostSwagger()
 	@Protected()
 	@Patch(":id")
 	@HttpCode(HttpStatus.NO_CONTENT)
