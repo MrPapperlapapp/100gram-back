@@ -1,4 +1,3 @@
-import { BadRequestException } from "@nestjs/common";
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 import { UploadPhotosCommand } from "@/features/posts/application/commands/upload-photos/upload-photos.command";
 import { PresignedPostUploadSessionResponseDto } from "@/features/posts/dto/response/presigned-post-upload-session.response.dto";
@@ -20,17 +19,13 @@ export class UploadPhotosHandler implements ICommandHandler<
 		private readonly postPhotoUploadRepository: PostPhotoUploadRepository
 	) {}
 
-	async execute({ userId, count }: UploadPhotosCommand) {
-		if (count > 10) {
-			throw new BadRequestException("Max 10 images");
-		}
-
+	async execute({ userId, contentTypes }: UploadPhotosCommand) {
 		const uploadId = randomUUID();
 
 		const uploadsUrls =
 			await this.storageService.generatePresignedUploadPosts(
 				`posts/${userId}/${uploadId}`,
-				count,
+				contentTypes,
 				{ maxSizeBytes: MAX_SIZE_BYTES }
 			);
 
@@ -38,7 +33,7 @@ export class UploadPhotosHandler implements ICommandHandler<
 			id: uploadId,
 			userId,
 			contentType: SESSION_CONTENT_TYPE,
-			count,
+			count: contentTypes.length,
 			maxSizeBytes: MAX_SIZE_BYTES
 		});
 

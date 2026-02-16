@@ -1,12 +1,22 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Type } from "class-transformer";
-import { IsInt, Max, Min } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn } from "class-validator";
+
+const ALLOWED_CONTENT_TYPES = [
+	"image/jpeg",
+	"image/png",
+	"image/webp"
+] as const;
 
 export class UploadInitRequestDto {
-	@ApiProperty({ example: 3, minimum: 1, maximum: 10 })
-	@Type(() => Number)
-	@IsInt()
-	@Min(1)
-	@Max(10)
-	count: number;
+	@ApiProperty({
+		example: ["image/jpeg", "image/png", "image/jpeg"],
+		type: [String],
+		description: "Array of content types for images to upload",
+		enum: ALLOWED_CONTENT_TYPES
+	})
+	@IsArray()
+	@ArrayMinSize(1)
+	@ArrayMaxSize(10)
+	@IsIn(ALLOWED_CONTENT_TYPES, { each: true })
+	contentTypes: string[];
 }
