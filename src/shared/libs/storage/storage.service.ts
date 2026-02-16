@@ -12,10 +12,6 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { buffer } from "node:stream/consumers";
 
-export type UploadImageDescriptor = {
-	contentType: string;
-};
-
 export type PresignedPostUpload = {
 	key: string;
 	url: string;
@@ -114,6 +110,9 @@ export class StorageService {
 			fields["Content-Type"] = options.contentType;
 		}
 
+		// Set Content-Disposition to inline so images are displayed, not downloaded
+		fields["Content-Disposition"] = "inline";
+
 		const { url, fields: presignedFields } = await createPresignedPost(
 			this.client,
 			{
@@ -135,7 +134,7 @@ export class StorageService {
 
 	async generatePresignedUploadPosts(
 		folder: string,
-		count: number,
+		contentTypes: string[],
 		options?: {
 			maxSizeBytes?: number;
 			expiresInSeconds?: number;
@@ -144,44 +143,21 @@ export class StorageService {
 		const maxSizeBytes = options?.maxSizeBytes ?? 10 * 1024 * 1024;
 
 		return Promise.all(
-			Array.from({ length: count }, async () => {
-				const key = `${folder}/${randomUUID()}`;
+			contentTypes.map(async (contentType) => {
+				const extension = this.getExtensionByContentType(contentType);
+				const key = `${folder}/${randomUUID()}${extension}`;
 
 				return this.presignedPost({
 					key,
 					maxSizeBytes,
+					contentType,
 					expiresInSeconds: options?.expiresInSeconds
 				});
 			})
 		);
 	}
 
-	async generatePresignedImageUploadPosts(
-		folder: string,
-		files: UploadImageDescriptor[],
-		options?: {
-			maxSizeBytes?: number;
-			expiresInSeconds?: number;
-		}
-	): Promise<PresignedPostUpload[]> {
-		const maxSizeBytes = options?.maxSizeBytes ?? 10 * 1024 * 1024;
-
-		return Promise.all(
-			files.map(async (file) => {
-				const ext = this.getExtensionByContentType(file.contentType);
-				const key = `${folder}/${randomUUID()}${ext}`;
-
-				return this.presignedPost({
-					key,
-					contentType: file.contentType,
-					maxSizeBytes,
-					expiresInSeconds: options?.expiresInSeconds
-				});
-			})
-		);
-	}
-
-	private getExtensionByContentType(contentType: string): string {
+	getExtensionByContentType(contentType: string): string {
 		switch (contentType) {
 			case "image/jpeg":
 				return ".jpg";
